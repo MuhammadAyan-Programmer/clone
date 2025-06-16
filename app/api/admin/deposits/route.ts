@@ -33,8 +33,8 @@ export async function POST(request: NextRequest) {
         if (user.referredBy) {
           const referrer = getUserByReferralCode(user.referredBy);
           if (referrer) {
-            // Direct referral commission (25%)
-            const directCommission = deposit.amount * 0.25;
+            // Direct referral commission (12%)
+            const directCommission = deposit.amount * 0.12;
             updateUser(referrer.id, {
               balance: referrer.balance + directCommission,
             });
@@ -50,8 +50,8 @@ export async function POST(request: NextRequest) {
             if (referrer.referredBy) {
               const indirectReferrer = getUserByReferralCode(referrer.referredBy);
               if (indirectReferrer) {
-                // Indirect referral commission (10%)
-                const indirectCommission = deposit.amount * 0.10;
+                // Indirect referral commission (8%)
+                const indirectCommission = deposit.amount * 0.08;
                 updateUser(indirectReferrer.id, {
                   balance: indirectReferrer.balance + indirectCommission,
                 });

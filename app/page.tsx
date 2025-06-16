@@ -84,7 +84,7 @@ export default function HomePage() {
             </CardHeader>
             <CardContent>
               <CardDescription className="text-gray-300">
-                Earn 25% from direct referrals and 10% from indirect referrals.
+                Earn 12% from direct referrals and 8% from indirect referrals.
               </CardDescription>
             </CardContent>
           </Card>

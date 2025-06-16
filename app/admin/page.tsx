@@ -448,7 +448,7 @@ export default function AdminPage() {
                           +${referral.commission.toFixed(2)}
                         </p>
                         <p className="text-gray-400 text-sm">
-                          {referral.level === 1 ? '25%' : '10%'} commission
+                          {referral.level === 1 ? '12%' : '8%'} commission
                         </p>
                       </div>
                     </div>
