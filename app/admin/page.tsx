@@ -18,9 +18,63 @@ import {
   Clock,
   TrendingUp,
   Eye,
-  EyeOff
+  EyeOff,
+  Plus
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+// Define types for better TypeScript support
+type User = {
+  id: string;
+  email: string;
+  balance: number;
+  totalDeposited: number;
+  totalWithdrawn: number;
+  referralCode: string;
+  createdAt: string;
+};
+
+type Deposit = {
+  id: string;
+  amount: number;
+  userEmail: string;
+  status: string;
+  txHash?: string;
+  createdAt: string;
+};
+
+type Withdrawal = {
+  id: string;
+  amount: number;
+  userEmail: string;
+  walletAddress: string;
+  status: string;
+  createdAt: string;
+};
+
+type Referral = {
+  id: string;
+  level: number;
+  referrerEmail: string;
+  referredEmail: string;
+  commission: number;
+  createdAt: string;
+};
+
+type AdminData = {
+  stats: {
+    totalUsers: number;
+    totalDeposits: number;
+    totalWithdrawals: number;
+    pendingDeposits: number;
+    pendingWithdrawals: number;
+  };
+  users: User[];
+  deposits: Deposit[];
+  withdrawals: Withdrawal[];
+  referrals: Referral[];
+};
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -28,7 +82,10 @@ export default function AdminPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [adminData, setAdminData] = useState<any>(null);
+  const [adminData, setAdminData] = useState<AdminData | null>(null);
+  const [fundAmount, setFundAmount] = useState('');
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [isFunding, setIsFunding] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -112,6 +169,47 @@ export default function AdminPage() {
       }
     } catch (error) {
       toast.error('An error occurred');
+    }
+  };
+
+  const handleFundUser = async () => {
+    if (!fundAmount || !selectedUserId) {
+      toast.error('Please enter amount and select user');
+      return;
+    }
+
+    const amount = parseFloat(fundAmount);
+    if (isNaN(amount) {
+      toast.error('Please enter a valid amount');
+      return;
+    }
+
+    if (amount <= 0) {
+      toast.error('Amount must be greater than 0');
+      return;
+    }
+
+    setIsFunding(true);
+    try {
+      const response = await fetch('/api/admin/fund-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: selectedUserId, amount }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success(`Successfully funded $${amount.toFixed(2)} to user`);
+        setFundAmount('');
+        setSelectedUserId('');
+        fetchAdminData();
+      } else {
+        toast.error(data.message || 'Failed to fund user');
+      }
+    } catch (error) {
+      toast.error('An error occurred while funding user');
+    } finally {
+      setIsFunding(false);
     }
   };
 
@@ -207,6 +305,57 @@ export default function AdminPage() {
           </Button>
         </div>
 
+        {/* Manual Fund User Section */}
+        <Card className="bg-gray-800 border-gray-700 mb-8">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Plus className="h-5 w-5" /> Manual Wallet Funding
+            </CardTitle>
+            <CardDescription className="text-gray-400">
+              Credit funds directly to a user's wallet
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="fundAmount" className="text-white">Amount (USD)</Label>
+                <Input
+                  id="fundAmount"
+                  type="number"
+                  value={fundAmount}
+                  onChange={(e) => setFundAmount(e.target.value)}
+                  placeholder="Enter amount"
+                  className="bg-gray-700 border-gray-600 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="userSelect" className="text-white">Select User</Label>
+                <Select onValueChange={setSelectedUserId} value={selectedUserId}>
+                  <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                    <SelectValue placeholder="Select user" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700">
+                    {adminData.users.map((user) => (
+                      <SelectItem key={user.id} value={user.id} className="hover:bg-gray-700">
+                        {user.email} (${user.balance.toFixed(2)})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-end">
+                <Button
+                  onClick={handleFundUser}
+                  disabled={isFunding || !fundAmount || !selectedUserId}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                >
+                  {isFunding ? 'Processing...' : 'Credit Funds'}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="bg-gray-800 border-gray-700">
@@ -270,7 +419,7 @@ export default function AdminPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {adminData.deposits.map((deposit: any) => (
+                  {adminData.deposits.map((deposit) => (
                     <div key={deposit.id} className="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
                       <div className="flex items-center space-x-4">
                         <div>
@@ -330,7 +479,7 @@ export default function AdminPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {adminData.withdrawals.map((withdrawal: any) => (
+                  {adminData.withdrawals.map((withdrawal) => (
                     <div key={withdrawal.id} className="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
                       <div className="flex items-center space-x-4">
                         <div>
@@ -392,7 +541,7 @@ export default function AdminPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {adminData.users.map((user: any) => (
+                  {adminData.users.map((user) => (
                     <div key={user.id} className="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
                       <div>
                         <p className="text-white font-medium">{user.email}</p>
@@ -427,7 +576,7 @@ export default function AdminPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {adminData.referrals.map((referral: any) => (
+                  {adminData.referrals.map((referral) => (
                     <div key={referral.id} className="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
                       <div>
                         <p className="text-white font-medium">
