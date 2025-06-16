@@ -24,7 +24,6 @@ import {
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-// Define types for better TypeScript support
 type User = {
   id: string;
   email: string;
@@ -179,7 +178,7 @@ export default function AdminPage() {
     }
 
     const amount = parseFloat(fundAmount);
-    if (isNaN(amount) {
+    if (isNaN(amount)) {
       toast.error('Please enter a valid amount');
       return;
     }
